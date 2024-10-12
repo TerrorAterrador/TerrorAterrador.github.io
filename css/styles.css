@@ -1,0 +1,19 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #222831;
+    /*cursor:none;*/
+}
+
+#myCanvas:focus {
+    outline: none;
+}
+
+#UI {
+    margin: 0;
+    padding: 0;
+    background-color: #393E46;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
