@@ -117,19 +117,12 @@ const colorsBrick = [
   "images/brickYellow.png",
 ];
 
-const brickConfig = {
-  initialRows: 6, // Número de filas de ladrillos
-  initialCols: 4, // Número de columnas de ladrillos
-  offsetTop: 50, // Espacio superior desde el borde del canvas
-  offsetLeft: canvas.width / 2 - ((brick.width + brick.brickPadding) * 4) / 2, // Espacio izquierdo desde el borde del canvas
-};
-
 const defaultHeart = {
   INTIAL_HEART_X: window.innerWidth - 100,
   INTIAL_HEART_Y: ui.height / 2 - 25 / 2,
   WIDTH_HEART: 30,
   HEIGTH_HEART: 25,
-  MAX_HEARTS: 3,
+  MAX_HEARTS: 2,
 };
 
 const heart = {
@@ -143,11 +136,13 @@ const heart = {
 const modifersImages = {
   "images/shortChange.png": "images/shortRectangle.png",
   "images/largeChange.png": "images/largeRectangle.png",
+  "images/heart.png": "images/heart.png",
 };
 
 const modifersChance = {
-  shortChange: 50,
-  largeChage: 100,
+  shortChange: 10,
+  largeChange: 5,
+  heartChange: 5,
 };
 
 const defaultModifiers = {
@@ -182,12 +177,19 @@ function loadModifiersChange() {
     ([modifiedImageURL, originalImageURL]) => {
       let modifiedImage = loadImage(modifiedImageURL);
       let originalImage = loadImage(originalImageURL);
+
+      let customWidth;
+
+      customWidth = originalImage.src.includes("heart.png")
+        ? heart.width
+        : defaultModifiers.width;
+
       modifiers.push({
         image: modifiedImage,
         originalImage: originalImage,
         x: defaultModifiers.x,
         y: defaultModifiers.y,
-        width: defaultModifiers.width,
+        width: customWidth,
         height: defaultModifiers.height,
       });
     }
@@ -218,29 +220,78 @@ function loadImage(src) {
   return img;
 }
 
+const defaultBrickConfig = {
+  offsetTop: 50, // Espacio superior desde el borde del canvas
+  offsetLeft: 0,
+};
+
+const brickStructures = [
+  [
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1],
+  ],
+  [
+    [1, 1, 1, 0, 1, 0, 1, 1, 1],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1],
+    [1, 1, 1, 0, 1, 0, 1, 1, 1],
+  ],
+  [
+    [1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+    [1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+    [1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+    [1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+    [1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+    [1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+    [1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+  ]
+];
+
 function loadInitialBricks() {
-  for (let row = 0; row < brickConfig.initialRows; row++) {
-    for (let col = 0; col < brickConfig.initialCols; col++) {
-      //let randomColor = parseInt(Math.random() * 10);
-      let brickImage = loadImage(colorsBrick[(row + col) % colorsBrick.length]);
+  // Seleccionar una estructura aleatoria de ladrillos
+  const selectedStructure =
+    brickStructures[Math.floor(Math.random() * brickStructures.length)];
+  const numColumns = selectedStructure[0].length; // Longitud de la primera fila
 
-      // Calcular la posición x e y para cada ladrillo
-      const brickX =
-        brickConfig.offsetLeft + col * (brick.width + brick.brickPadding);
-      const brickY =
-        brickConfig.offsetTop + row * (brick.height + brick.brickPadding);
+  // Iterar sobre la estructura y crear ladrillos según el patrón
+  selectedStructure.forEach((row, rowIndex) => {
+    row.forEach((brickVisible, colIndex) => {
+      if (brickVisible) {
+        let brickImage = loadImage(
+          colorsBrick[(rowIndex + colIndex) % colorsBrick.length]
+        );
 
-      // Añadir el ladrillo con su imagen y posición a la lista de ladrillos
-      bricks.push({
-        image: brickImage,
-        x: brickX,
-        y: brickY,
-        width: brick.width,
-        height: brick.height,
-        visible: true,
-      });
-    }
-  }
+        defaultBrickConfig.offsetLeft =
+          canvas.width / 2 -
+          ((brick.width + brick.brickPadding) * numColumns) / 2;
+
+        // Calcular la posición x e y para cada ladrillo
+        const brickX =
+          defaultBrickConfig.offsetLeft +
+          colIndex * (brick.width + brick.brickPadding);
+        const brickY =
+          defaultBrickConfig.offsetTop +
+          rowIndex * (brick.height + brick.brickPadding);
+
+        // Añadir el ladrillo con su imagen y posición a la lista de ladrillos
+        bricks.push({
+          image: brickImage,
+          x: brickX,
+          y: brickY,
+          width: brick.width,
+          height: brick.height,
+          visible: true,
+        });
+      }
+    });
+  });
 }
 
 function drawScore() {
@@ -372,7 +423,7 @@ function handleBallWallCollision() {
 }
 
 function handleBallMised() {
-  hearts.shift();
+  hearts.pop();
   sounds.soundLosseHeart();
   ball.x = defaultBall.INITIAL_BALL_X;
   ball.y = defaultBall.INITIAL_BALL_Y;
@@ -425,20 +476,36 @@ function handleModiferRectangleCollision() {
       if (checkCollisionModifierRectangle(modifier)) {
         // Large -> 150 | Big -> =
         // Large -> = | Big -> 25 * 2
-        rectangle.height = defaultRectangle.HEIGTH_RECTANGLE;
-        rectangle.width = defaultRectangle.WIDTH_RECTANGLE;
 
         if (modifier.image.src.includes("shortChange")) {
+          rectangle.height = defaultRectangle.HEIGTH_RECTANGLE;
+          rectangle.width = defaultRectangle.WIDTH_RECTANGLE;
           rectangle.height *= 2;
+          rectangle.image = modifier.originalImage;
         } else if (modifier.image.src.includes("largeChange")) {
+          rectangle.height = defaultRectangle.HEIGTH_RECTANGLE;
+          rectangle.width = defaultRectangle.WIDTH_RECTANGLE;
           rectangle.width = 150;
+          rectangle.image = modifier.originalImage;
+        } else if (modifier.image.src.includes("heart")) {
+          addHeart();
         }
-
-        rectangle.image = modifier.originalImage;
-
         modifier.visible = false;
       }
     });
+}
+
+function addHeart() {
+  let i = hearts.length;
+  const heartX = heart.x + i * (heart.width - defaultHeart.WIDTH_HEART * 2.2);
+  i++;
+  hearts.push({
+    image: heart.image,
+    x: heartX,
+    y: heart.y,
+    width: heart.width,
+    height: heart.height,
+  });
 }
 
 function checkCollisionModifierRectangle(modifier) {
@@ -458,30 +525,58 @@ function detectModifierCollision() {
 }
 
 function randomModifiers(x, y, height) {
-  let randomNumber = parseInt(Math.random() * 100) + 1;
-  if (randomNumber <= modifersChance.shortChange && !modifiers[0].visible) {
-    modifiers[0].visible = true;
-    modifiers[0].x = x;
-    modifiers[0].y = y + height;
-    config.yModifierSpeed = 1;
-  } else if (
-    randomNumber <= modifersChance.largeChage &&
-    !modifiers[1].visible
-  ) {
-    modifiers[1].visible = true;
-    modifiers[1].x = x;
-    modifiers[1].y = y + height;
-    config.yModifierSpeed = 1;
+  const selectedModifier = getModifierByRandomNumber();
+
+  // Activar el modificador si existe y no está visible
+  if (selectedModifier && !selectedModifier.visible) {
+    activateModifier(selectedModifier, x, y, height);
   }
 }
 
+function getModifierByRandomNumber() {
+  const randomNumber = parseInt(Math.random() * 100) + 1; // Número aleatorio entre 1 y 100
+
+  if (randomNumber <= modifersChance.shortChange) {
+    return modifiers[0];
+  } else if (
+    randomNumber <=
+    modifersChance.shortChange + modifersChance.largeChange
+  ) {
+    return modifiers[1];
+  } else if (
+    randomNumber <=
+    modifersChance.shortChange +
+      modifersChance.largeChange +
+      modifersChance.heartChange
+  ) {
+    return modifiers[2];
+  }
+  return null; // Si no cae en ningún rango, no selecciona un modificador
+}
+
+function activateModifier(modifier, x, y, height) {
+  modifier.visible = true;
+  modifier.x = x;
+  modifier.y = y + height;
+  config.yModifierSpeed = 1;
+}
+
 function continuePlaying() {
-  let playing = confirm("quieres seguir jugando?");
+  let playing = confirm("¿Quieres seguir jugando?");
   if (playing) {
+    config.globalScore = 0;
     hearts.splice(0, hearts.length);
     bricks.splice(0, bricks.length);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     GAME_STATUS.GAME_OVER = false;
+    GAME_STATUS.GAME_WIN = false;
+    GAME_STATUS.GAME_PAUSE = true;
+    ball.x = defaultBall.INITIAL_BALL_X;
+    ball.y = defaultBall.INITIAL_BALL_Y;
+    config.xBallSpeed = 0;
+    config.yballSpeed = 0;
+    rectangle.x = defaultRectangle.INITIAL_RECTANGLE_X;
+    rectangle.y = defaultRectangle.INITIAL_RECTANGLE_Y;
     main();
   }
 }
@@ -500,7 +595,7 @@ function gameOver() {
   ctx.fillStyle = "white";
   ctx.textAlign = "center";
   ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2);
-  //setTimeout(continuePlaying, 1000);
+  setTimeout(continuePlaying, 1000);
 }
 
 function gameWin() {
@@ -512,13 +607,14 @@ function gameWin() {
   ctx.fillStyle = "white";
   ctx.textAlign = "center";
   ctx.fillText("Game Win", canvas.width / 2, canvas.height / 2);
+  setTimeout(continuePlaying, 1000);
 }
 
 function gameLoop(timestamp) {
   if (GAME_STATUS.GAME_PAUSE) {
     if (config.movingLeft) {
-      config.xBallSpeed = 3; // 3
-      config.yballSpeed = -8; // -8
+      config.xBallSpeed = -3; // 3
+      config.yballSpeed = -6; // -8
       GAME_STATUS.GAME_PAUSE = false;
     } else if (config.movingRight) {
       config.xBallSpeed = 3; // 3
@@ -545,24 +641,11 @@ function gameLoop(timestamp) {
 }
 
 function main() {
+  loadInitialBricks();
   loadModifiersChange();
   loadHeart();
-  loadInitialBricks();
   setupKeyboardListeners();
   gameLoop();
 }
 
 main();
-
-function addHeart() {
-  //let i = hearts.length;
-  // const heartX = heart.x + i * (heart.width - WIDTH_HEART * 2.2);
-  // i++;
-  // hearts.push({
-  //   image: heart.image,
-  //   x: heartX,
-  //   y: heart.y,
-  //   width: heart.width,
-  //   height: heart.height,
-  // });
-}
